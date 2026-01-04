@@ -127,3 +127,45 @@ def run_full_preprocessing(df: pd.DataFrame) -> pd.DataFrame:
     df_processed = apply_imputation(df_clean)
 
     return df_processed
+
+
+def engineer_biomarkers(df):
+    """
+    Creates derived features for inflammation and handles heavy metal skewness.
+
+    Logic:
+    1. Acute Inflammation: Separate infection/trauma (CRP > 10) from chronic stress.
+    2. Log Transformation: Heavy metals and CRP usually follow log-normal distributions.
+       We apply log10(x + 0.01) to handle skewness and zero values.
+    """
+    # --- 1. Inflammation Flags ---
+
+    # Acute Inflammation Flag (CRP >= 10 mg/L)
+    # Investigating if 'sickness behavior' mimics depression.
+    df["is_acute_inflammation"] = (df["LBXHSCRP"] >= 10).astype(int)
+
+    # Chronic Inflammation Groups (Clinical standard)
+    # Categories: Low (<1), Moderate (1-3), High (3-10), Acute (>10)
+    df["inflammation_risk_group"] = pd.cut(
+        df["LBXHSCRP"],
+        bins=[-1, 1, 3, 10, 1000],
+        labels=["Low", "Moderate", "High", "Acute"],
+    )
+
+    # --- 2. Log Transformations (Heavy Metals & CRP) ---
+
+    # List of variables to transform (Lead, Cadmium, Mercury, CRP)
+    # Adding 'Log_' prefix to keep original raw values available for reference.
+    vars_to_log = {
+        "LBXBPB": "Log_Lead",
+        "LBXBCD": "Log_Cadmium",
+        "LBXTHG": "Log_Mercury",
+        "LBXHSCRP": "Log_CRP",
+    }
+
+    for col, new_col_name in vars_to_log.items():
+        if col in df.columns:
+            # Adding small epsilon (0.01) to avoid log(0) errors
+            df[new_col_name] = np.log10(df[col] + 0.01)
+
+    return df

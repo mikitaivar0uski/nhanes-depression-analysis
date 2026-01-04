@@ -118,3 +118,92 @@ def weighted_correlation_matrix(
 
     # Return as DataFrame for readability
     return pd.DataFrame(corr_matrix, index=features, columns=features)
+
+
+# src/analysis.py
+
+
+def check_sample_sufficiency(
+    df: pd.DataFrame, group_col: str, min_obs: int = 30
+) -> None:
+    """
+    Validates if the sample size for each subgroup is sufficient for analysis.
+
+    According to NHANES analytic guidelines, estimates should not be reported
+    if the unweighted sample size is < 30 or the relative standard error is > 30%.
+
+    Args:
+        df (pd.DataFrame): The dataset.
+        group_col (str): The column used for grouping (e.g., 'Gender', 'SMI_Category').
+        min_obs (int): Minimum required observations per group (default 30).
+
+    Raises:
+        ValueError: If any group has fewer observations than min_obs.
+    """
+    counts = df[group_col].value_counts()
+    print(f"--- Sample Size Check for '{group_col}' ---")
+    print(counts)
+
+    if (counts < min_obs).any():
+        insufficient_groups = counts[counts < min_obs].index.tolist()
+        raise ValueError(
+            f"❌ STOP: Insufficient sample size for groups {insufficient_groups}. "
+            f"Analysis cannot proceed as results will be statistically insignificant."
+        )
+    print("✅ Sample size is sufficient. Proceeding with analysis.\n")
+
+
+def get_weighted_depression_rate(
+    df: pd.DataFrame,
+    group_col: str,
+    target_col: str = "Depression_Flag",
+    weight_col: str = "MEC_Weight",
+) -> pd.DataFrame:
+    """
+    Calculates the weighted prevalence of depression for given groups
+    with 95% Confidence Intervals (CI).
+
+    Why this matters:
+    A simple mean() is biased because NHANES oversamples certain demographics.
+    We must use weights to represent the true US population.
+
+    Args:
+        df (pd.DataFrame): Dataframe containing the data.
+        group_col (str): Variable to group by (e.g., 'Gender').
+        target_col (str): Binary target (1=Depressed, 0=Normal).
+        weight_col (str): Survey weight column name.
+
+    Returns:
+        pd.DataFrame: Summary table with Mean, Standard Error, and 95% CI.
+    """
+    results = []
+
+    # Drop rows where target or group is NaN to avoid errors
+    clean_df = df.dropna(subset=[group_col, target_col, weight_col])
+
+    for group in clean_df[group_col].unique():
+        sub_df = clean_df[clean_df[group_col] == group]
+
+        # Using statsmodels for weighted statistics
+        weighted_stats = DescrStatsW(sub_df[target_col], weights=sub_df[weight_col])
+
+        mean = weighted_stats.mean
+        std_err = weighted_stats.std_mean
+
+        # Calculate 95% Confidence Interval
+        # formula: mean ± 1.96 * standard_error
+        ci_lower = mean - (1.96 * std_err)
+        ci_upper = mean + (1.96 * std_err)
+
+        results.append(
+            {
+                group_col: group,
+                "Weighted_Mean": mean,
+                "Standard_Error": std_err,
+                "CI_Lower": ci_lower,
+                "CI_Upper": ci_upper,
+                "N_Unweighted": len(sub_df),
+            }
+        )
+
+    return pd.DataFrame(results).sort_values("Weighted_Mean", ascending=False)

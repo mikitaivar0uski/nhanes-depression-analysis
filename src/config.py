@@ -33,7 +33,7 @@ NHANES_MAP = {
     "ALQ_J": ["SEQN", "ALQ111"],
     "PAQ_J": ["SEQN", "PAQ650"],
     # --- Exams & Lab ---
-    "BMX_J": ["SEQN", "BMXBMI", "BMXWAIST"],
+    "BMX_J": ["SEQN", "BMXBMI", "BMXWAIST", "BMXHT"],
     "BPX_J": ["SEQN", "BPXSY1", "BPXDI1"],
     "BIOPRO_J": [
         "SEQN",
@@ -53,10 +53,12 @@ NHANES_MAP = {
     "DXX_J": [
         "SEQN",
         "DXXTRFAT",  # Trunk Fat (grams)
-        "DXXRALST",  # Right Arm
-        "DXXLALST",  # Left Arm
-        "DXXRLLST",  # Right Leg
-        "DXXLLLST",  # Left Leg
+        "DXDTOPF",  # Body Fat Percentage
+        "DXDTOLE",  # Total Lean Mass (grams)
+        "DXDRALE",  # Right Arm Lean Mass (вместо DXXRALST)
+        "DXDLALE",  # Left Arm Lean Mass (вместо DXXLALST)
+        "DXDRLLE",  # Right Leg Lean Mass (вместо DXXRLLST)
+        "DXDLLLE",  # Left Leg Lean Mass (вместо DXXLLLST)
     ],
     "SLQ_J": ["SEQN", "SLQ050"],
 }
@@ -83,9 +85,18 @@ RENAME_MAP = {
     "ALQ111": "Alcohol_Tried",  # Ever had at least one drink of alcohol?
     "PAQ650": "Vigorous_Activity",  # Vigorous intensity physical activity
     # --- Body Measures ---
+    "BMXHT": "Height_cm",
     "BMXBMI": "BMI",  # Body Mass Index (kg/m^2)
     "BMXWT": "Weight_kg",  # Weight in kilograms
     "BMXWAIST": "Waist_cm",  # Waist circumference in centimeters
+    # --- DXA Body Composition ---
+    "DXDTOPF": "Body_Fat_Pct",
+    "DXDTOLE": "Lean_Mass_g",
+    "DXXTRFAT": "Trunk_Fat_g",
+    "DXDRALE": "Lean_Mass_Arm_Right_g",  # Было DXXRALST -> Стало DXDRALE
+    "DXDLALE": "Lean_Mass_Arm_Left_g",  # Было DXXLALST -> Стало DXDLALE
+    "DXDRLLE": "Lean_Mass_Leg_Right_g",  # Было DXXRLLST -> Стало DXDRLLE
+    "DXDLLLE": "Lean_Mass_Leg_Left_g",  # Было DXXLLLST -> Стало DXDLLLE
     # --- Cardiovascular ---
     "BPXSY1": "BP_Systolic",  # Systolic blood pressure (mmHg)
     "BPXDI1": "BP_Diastolic",  # Diastolic blood pressure (mmHg)
@@ -108,9 +119,7 @@ RENAME_MAP = {
     # --- Kidney & Vitamins ---
     "URDACT": "Albumin_Creatinine_Ratio",  # Albumin/creatinine ratio (renal health)
     "LBXVIDMS": "VitaminD_nmolL",  # Vitamin D (nmol/L)
-    "DXDTOPF": "Body_Fat_Pct",  # Процент жира
-    "DXDTOLE": "Lean_Mass_g",  # Мышечная масса (г)
-    "DXXTRFAT": "Trunk_Fat_g",
+    # ... (остальные переменные остаются как были)
 }
 
 # ==============================================================================
