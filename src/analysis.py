@@ -73,3 +73,48 @@ class SurveyAnalyzer:
                 corr_matrix[j, i] = rho
 
         return pd.DataFrame(corr_matrix, index=valid_cols, columns=valid_cols)
+
+
+# src/analysis.py
+
+
+def weighted_correlation_matrix(
+    df: pd.DataFrame, weight_col: str, features: list
+) -> pd.DataFrame:
+    """
+    Calculates the weighted Pearson correlation matrix for specific features.
+
+    Why: Standard pandas .corr() does not support survey weights.
+    In NHANES, ignoring weights biases the result towards the sample,
+    not the US population.
+
+    Args:
+        df: Dataframe containing features and weights.
+        weight_col: Name of the weight column (e.g., 'WTMEC2YR').
+        features: List of numerical columns to correlate.
+
+    Returns:
+        pd.DataFrame: Weighted correlation matrix.
+    """
+    # Filter valid data (drop NaNs in relevant columns)
+    valid_data = df[features + [weight_col]].dropna()
+
+    data = valid_data[features].values
+    weights = valid_data[weight_col].values
+
+    # Calculate weighted covariance matrix
+    # Note: cov(X, Y, w) = sum(w * (x - mean_x) * (y - mean_y)) / sum(w)
+    mean = np.average(data, axis=0, weights=weights)
+    xm = data - mean
+
+    # Weighted covariance
+    cov = np.dot(weights * xm.T, xm) / np.sum(weights)
+
+    # Calculate standard deviations (sqrt of diagonal of covariance)
+    sqr_weights = np.sqrt(np.diag(cov))
+
+    # Convert covariance to correlation: corr = cov / (std_x * std_y)
+    corr_matrix = cov / np.outer(sqr_weights, sqr_weights)
+
+    # Return as DataFrame for readability
+    return pd.DataFrame(corr_matrix, index=features, columns=features)

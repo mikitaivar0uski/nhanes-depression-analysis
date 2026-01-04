@@ -33,7 +33,7 @@ NHANES_MAP = {
     "ALQ_J": ["SEQN", "ALQ111"],
     "PAQ_J": ["SEQN", "PAQ650"],
     # --- Exams & Lab ---
-    "BMX_J": ["SEQN", "BMXBMI"],
+    "BMX_J": ["SEQN", "BMXBMI", "BMXWAIST"],
     "BPX_J": ["SEQN", "BPXSY1", "BPXDI1"],
     "BIOPRO_J": [
         "SEQN",
@@ -50,12 +50,17 @@ NHANES_MAP = {
     "PBCD_J": ["SEQN", "LBXBCD", "LBXBPB", "LBXTHG"],
     "ALB_CR_J": ["SEQN", "URDACT"],
     "VID_J": ["SEQN", "LBXVIDMS"],
-    "DXX_J": ["SEQN", "DXDTOPF", "DXDTOLE", "DXXTRFAT"],
+    "DXX_J": [
+        "SEQN",
+        "DXXTRFAT",  # Trunk Fat (grams)
+        "DXXRALST",  # Right Arm
+        "DXXLALST",  # Left Arm
+        "DXXRLLST",  # Right Leg
+        "DXXLLLST",  # Left Leg
+    ],
+    "SLQ_J": ["SEQN", "SLQ050"],
 }
 
-# ==============================================================================
-# 3. RENAME MAPPING (Human Readable Names)
-# ==============================================================================
 # ==============================================================================
 # 3. RENAME MAPPING (Human Readable Names)
 # ==============================================================================
