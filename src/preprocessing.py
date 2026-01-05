@@ -3,169 +3,171 @@ import pandas as pd
 from sklearn.impute import KNNImputer
 from sklearn.preprocessing import MinMaxScaler
 
+# Import your configuration module
 from src import config
 
 
 def _filter_population(df: pd.DataFrame) -> pd.DataFrame:
     """
     Internal helper: Restricts dataset to the target population (Adults 18+).
-
-    Rationale:
-    NHANES administers PHQ-9 only to participants aged 18+. Including minors
-    inflates the denominator, leading to underestimated depression prevalence.
     """
     initial_rows = len(df)
-
-    # Filter logic
-    # Note: Assumes columns have already been renamed to readable format (Age)
+    # Using readable name 'Age'
     df_adults = df[df["Age"] >= 18].copy()
 
-    dropped_rows = initial_rows - len(df_adults)
-    if dropped_rows > 0:
+    dropped = initial_rows - len(df_adults)
+    if dropped > 0:
         print(
-            f"Population Filter: Dropped {dropped_rows} rows (Minors < 18). Retained: {len(df_adults)}"
+            f"-> Filter: Dropped {dropped} rows (Minors < 18). Remaining: {len(df_adults)}"
         )
 
     return df_adults
 
 
-def clean_pipeline(df: pd.DataFrame) -> pd.DataFrame:
+def _clean_and_encode(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Executes standard cleaning: encoding and target variable generation.
-    Note: Renaming must happen BEFORE calling this function.
+    1. Replaces Refused/Don't Know codes (7/9) with NaN.
+    2. Calculates Target (PHQ9 Score AND Binary Depression).
+    3. DROPS raw DPQ columns to prevent leakage.
+    4. Encodes categorical variables.
     """
-    # Create a copy to avoid SettingWithCopy warnings
     df = df.copy()
 
-    # 1. Encode Categorical Features
-    for col, mapping in config.ENCODING_LOGIC.items():
+    # 1. Handle NHANES "Refused" (7/77) and "Don't Know" (9/99) codes
+    for col, codes in config.categorical_missing_codes.items():
         if col in df.columns:
-            df[col] = df[col].map(mapping)
+            df[col] = df[col].replace(codes, np.nan)
 
-    # 2. Handle Biological Artifacts (Zero is impossible for these metrics)
+    # 2. Generate Target Variables (Score and Binary)
+    dpq_cols = [c for c in df.columns if c.startswith("DPQ") and c != "DPQ100"]
+
+    if dpq_cols:
+        # Require at least 7 valid answers to compute a score
+        df["PHQ9_Score"] = df[dpq_cols].sum(axis=1, min_count=7)
+
+        # Create Binary Target: 1 if Score >= 10 (Clinical Depression), else 0
+        # Only calculate this where PHQ9_Score is not NaN
+        df["Depression"] = np.where(
+            df["PHQ9_Score"].isna(), np.nan, (df["PHQ9_Score"] >= 10).astype(float)
+        )
+
+        # --- CRITICAL: DROP RAW DPQ COLUMNS ---
+        # Removing individual questions so the model doesn't "cheat".
+        df = df.drop(columns=dpq_cols)
+        print(f"-> Target Generation: Dropped {len(dpq_cols)} raw DPQ columns.")
+
+    # 3. Label Encoding for Categorical Features
+    categorical_cols = df.select_dtypes(include=["object", "category"]).columns
+    for col in categorical_cols:
+        if col == "SEQN":
+            continue
+
+        # Encode strings to numbers, preserving NaNs
+        df[col] = df[col].astype("category").cat.codes
+        df[col] = df[col].replace(-1, np.nan)
+
+    # 4. Handle Biological Artifacts
     for v in ["BMI", "Glucose_mgdL", "CRP_mgL"]:
         if v in df.columns:
             df[v] = df[v].replace(0, np.nan)
 
-    # 3. Generate Target Variable (PHQ-9)
-    phq_cols = [c for c in df.columns if c.startswith("DPQ") and c != "DPQ100"]
+    return df
 
-    if phq_cols:
-        # NHANES codes 7 (Refused) and 9 (Don't Know) as missing for scoring
-        df[phq_cols] = df[phq_cols].replace({7: np.nan, 9: np.nan})
 
-        # Require at least 7 valid answers to compute a score
-        df["PHQ9_Score"] = df[phq_cols].sum(axis=1, min_count=7)
+def _apply_imputation(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Performs KNN Imputation.
+    Excludes Targets (Score & Binary), ID, and Weights.
+    """
+    # Columns to EXCLUDE from imputation
+    # Added "Depression" to exclusion list
+    cols_to_exclude = [
+        "SEQN",
+        "PHQ9_Score",
+        "Depression",
+        "MEC_Weight",
+        "PSU",
+        "Strata",
+    ]
 
-        # Binary Target
-        df["Depression"] = (df["PHQ9_Score"] >= 10).astype(float)
+    excluded_data = df[[c for c in cols_to_exclude if c in df.columns]].copy()
+    impute_cols = [c for c in df.columns if c not in cols_to_exclude]
+    df_to_impute = df[impute_cols].copy()
 
-        # Propagate NaNs: If score is NaN, target must be NaN
-        df.loc[df["PHQ9_Score"].isna(), "Depression"] = np.nan
+    # 1. Scaling
+    scaler = MinMaxScaler()
+    df_scaled = pd.DataFrame(scaler.fit_transform(df_to_impute), columns=impute_cols)
+
+    # 2. KNN Imputer
+    imputer = KNNImputer(n_neighbors=5)
+    df_imputed_array = imputer.fit_transform(df_scaled)
+    df_imputed = pd.DataFrame(df_imputed_array, columns=impute_cols)
+
+    # 3. Inverse Scaling
+    df_restored = pd.DataFrame(
+        scaler.inverse_transform(df_imputed), columns=impute_cols
+    )
+
+    # 4. Rounding categorical columns
+    for col in df_restored.columns:
+        if col not in config.NUMERICAL_COLS:
+            df_restored[col] = df_restored[col].round()
+
+    # 5. Reassemble
+    df_final = pd.concat(
+        [excluded_data.reset_index(drop=True), df_restored.reset_index(drop=True)],
+        axis=1,
+    )
+
+    print(f"-> Imputation Complete. Features: {df_final.shape[1]}")
+    return df_final
+
+
+def _engineer_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Creates derived features (Log transformation, Binning).
+    """
+    # 1. Log Transformations
+    vars_to_log = {
+        "Lead_ugdL": "Log_Lead",
+        "Cadmium_ugL": "Log_Cadmium",
+        "Mercury_Total_ugL": "Log_Mercury",
+        "CRP_mgL": "Log_CRP",
+    }
+
+    for original, new_col in vars_to_log.items():
+        if original in df.columns:
+            df[new_col] = np.log10(df[original] + 0.01)
+
+    # 2. Acute Inflammation Flag
+    if "CRP_mgL" in df.columns:
+        df["is_acute_inflammation"] = (df["CRP_mgL"] >= 10).astype(int)
+
+    # 3. BMI Binning
+    if "BMI" in df.columns:
+        df["BMI_Category"] = pd.cut(
+            df["BMI"], bins=[0, 18.5, 25, 30, 100], labels=[0, 1, 2, 3]
+        ).astype(float)
 
     return df
 
 
-def apply_imputation(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Performs KNN Imputation with scaling and post-processing.
-    """
-
-    # 1. Feature Engineering: Capture 'Missingness' signal
-    if "Poverty_Ratio" in df.columns:
-        df["Poverty_Missing"] = df["Poverty_Ratio"].isna().astype(int)
-
-    # 2. Preparation for KNN
-    if "SEQN" in df.columns:
-        df = df.set_index("SEQN")
-
-    cols = df.columns
-    index = df.index
-
-    # 3. Scaling
-    scaler = MinMaxScaler()
-    df_scaled = pd.DataFrame(scaler.fit_transform(df), columns=cols, index=index)
-
-    # 4. Imputation
-    imputer = KNNImputer(n_neighbors=5)
-    imputed_data = imputer.fit_transform(df_scaled)
-
-    df_imputed_scaled = pd.DataFrame(imputed_data, columns=cols, index=index)
-
-    # 5. Inverse Scaling
-    df_final = pd.DataFrame(
-        scaler.inverse_transform(df_imputed_scaled), columns=cols, index=index
-    )
-
-    # 6. Post-processing (Rounding categories)
-    categorical_cols = [c for c in df_final.columns if c not in config.NUMERICAL_COLS]
-
-    for col in categorical_cols:
-        df_final[col] = df_final[col].round().astype(int)
-
-    # Restore SEQN
-    df_final = df_final.reset_index()
-
-    print(f"-> Imputation Complete. Final Shape: {df_final.shape}")
-    return df_final
-
-
 def run_full_preprocessing(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Orchestration function: Renaming -> Filtering -> Cleaning -> Imputation.
+    Main orchestration function.
     """
-    # Step 1: Rename Columns (Critical: Must be done first to use readable names)
+    print("Starting Preprocessing Pipeline...")
+
     df = df.rename(columns=config.RENAME_MAP)
+    df = _filter_population(df)
+    df = _clean_and_encode(df)
+    df = _apply_imputation(df)
+    df = _engineer_features(df)
 
-    # Step 2: Filter Population (Adults 18+)
-    df_adults = _filter_population(df)
-
-    # Step 3: Clean & Engineer Features
-    df_clean = clean_pipeline(df_adults)
-
-    # Step 4: Handle Missing Data
-    df_processed = apply_imputation(df_clean)
-
-    return df_processed
-
-
-def engineer_biomarkers(df):
-    """
-    Creates derived features for inflammation and handles heavy metal skewness.
-
-    Logic:
-    1. Acute Inflammation: Separate infection/trauma (CRP > 10) from chronic stress.
-    2. Log Transformation: Heavy metals and CRP usually follow log-normal distributions.
-       We apply log10(x + 0.01) to handle skewness and zero values.
-    """
-    # --- 1. Inflammation Flags ---
-
-    # Acute Inflammation Flag (CRP >= 10 mg/L)
-    # Investigating if 'sickness behavior' mimics depression.
-    df["is_acute_inflammation"] = (df["LBXHSCRP"] >= 10).astype(int)
-
-    # Chronic Inflammation Groups (Clinical standard)
-    # Categories: Low (<1), Moderate (1-3), High (3-10), Acute (>10)
-    df["inflammation_risk_group"] = pd.cut(
-        df["LBXHSCRP"],
-        bins=[-1, 1, 3, 10, 1000],
-        labels=["Low", "Moderate", "High", "Acute"],
-    )
-
-    # --- 2. Log Transformations (Heavy Metals & CRP) ---
-
-    # List of variables to transform (Lead, Cadmium, Mercury, CRP)
-    # Adding 'Log_' prefix to keep original raw values available for reference.
-    vars_to_log = {
-        "LBXBPB": "Log_Lead",
-        "LBXBCD": "Log_Cadmium",
-        "LBXTHG": "Log_Mercury",
-        "LBXHSCRP": "Log_CRP",
-    }
-
-    for col, new_col_name in vars_to_log.items():
-        if col in df.columns:
-            # Adding small epsilon (0.01) to avoid log(0) errors
-            df[new_col_name] = np.log10(df[col] + 0.01)
+    # Drop rows where Target is missing (using PHQ9_Score as primary check)
+    before_drop = len(df)
+    df = df.dropna(subset=["PHQ9_Score"])
+    if len(df) < before_drop:
+        print(f"-> Dropped {before_drop - len(df)} rows where Target was missing.")
 
     return df

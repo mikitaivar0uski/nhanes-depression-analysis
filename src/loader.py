@@ -44,9 +44,11 @@ def load_raw_data() -> pd.DataFrame:
     # 1. Load Backbone (Demographics)
     demo_path = find_file("DEMO_J")
     if not demo_path:
-        raise FileNotFoundError(f"❌ CRITICAL: DEMO_J not found in {config.DATA_DIR}")
+        raise FileNotFoundError(
+            f"[ERROR] CRITICAL: DEMO_J not found in {config.DATA_DIR}"
+        )
 
-    print(f"✅ Loaded Backbone: DEMO_J ({demo_path.name})")
+    print(f"[OK] Loaded Backbone: DEMO_J ({demo_path.name})")
 
     # Load and clean DEMO
     df = pd.read_sas(str(demo_path))
@@ -75,7 +77,7 @@ def load_raw_data() -> pd.DataFrame:
             # Check if we have anything useful besides SEQN
             if len(available_cols) <= 1:  # Only SEQN or empty
                 print(
-                    f"⚠️  WARNING: {key} found, but no target columns found. Skipping."
+                    f"[WARN] WARNING: {key} found, but no target columns found. Skipping."
                 )
                 continue
 
@@ -96,7 +98,7 @@ def load_raw_data() -> pd.DataFrame:
             )
 
         else:
-            print(f"❌ MISSING FILE: {key}")
+            print(f"[MISSING] FILE: {key}")
 
     print(f"--- DATA LOADING COMPLETE. Final Shape: {df.shape} ---")
     return df

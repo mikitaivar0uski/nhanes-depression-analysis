@@ -32,8 +32,13 @@ NHANES_MAP = {
     "SMQ_J": ["SEQN", "SMQ020"],
     "ALQ_J": ["SEQN", "ALQ111"],
     "PAQ_J": ["SEQN", "PAQ650"],
+    "SLQ_J": ["SEQN", "SLQ050"],
     # --- Exams & Lab ---
-    "BMX_J": ["SEQN", "BMXBMI", "BMXWAIST", "BMXHT"],
+    "BMX_J": [
+        "SEQN",
+        "BMXBMI",
+        "BMXWAIST",
+    ],  # Added BMXWT (Weight)
     "BPX_J": ["SEQN", "BPXSY1", "BPXDI1"],
     "BIOPRO_J": [
         "SEQN",
@@ -50,17 +55,14 @@ NHANES_MAP = {
     "PBCD_J": ["SEQN", "LBXBCD", "LBXBPB", "LBXTHG"],
     "ALB_CR_J": ["SEQN", "URDACT"],
     "VID_J": ["SEQN", "LBXVIDMS"],
+    # --- DXA Body Composition (Simplified) ---
     "DXX_J": [
         "SEQN",
         "DXXTRFAT",  # Trunk Fat (grams)
         "DXDTOPF",  # Body Fat Percentage
         "DXDTOLE",  # Total Lean Mass (grams)
-        "DXDRALE",  # Right Arm Lean Mass (вместо DXXRALST)
-        "DXDLALE",  # Left Arm Lean Mass (вместо DXXLALST)
-        "DXDRLLE",  # Right Leg Lean Mass (вместо DXXRLLST)
-        "DXDLLLE",  # Left Leg Lean Mass (вместо DXXLLLST)
+        # Limb specific data removed as requested
     ],
-    "SLQ_J": ["SEQN", "SLQ050"],
 }
 
 # ==============================================================================
@@ -74,7 +76,6 @@ RENAME_MAP = {
     "INDFMPIR": "Poverty_Ratio",  # Ratio of family income to poverty threshold
     "DMDEDUC2": "Education_Level",  # Education level (adults 20+)
     "DMDMARTL": "Marital_Status",  # Marital status
-    "INDHHIN2": "Family_Income_Category",  # Annual household income category
     "SDMVPSU": "PSU",
     "SDMVSTRA": "Strata",
     "WTMEC2YR": "MEC_Weight",
@@ -85,18 +86,12 @@ RENAME_MAP = {
     "ALQ111": "Alcohol_Tried",  # Ever had at least one drink of alcohol?
     "PAQ650": "Vigorous_Activity",  # Vigorous intensity physical activity
     # --- Body Measures ---
-    "BMXHT": "Height_cm",
     "BMXBMI": "BMI",  # Body Mass Index (kg/m^2)
-    "BMXWT": "Weight_kg",  # Weight in kilograms
     "BMXWAIST": "Waist_cm",  # Waist circumference in centimeters
     # --- DXA Body Composition ---
     "DXDTOPF": "Body_Fat_Pct",
     "DXDTOLE": "Lean_Mass_g",
     "DXXTRFAT": "Trunk_Fat_g",
-    "DXDRALE": "Lean_Mass_Arm_Right_g",  # Было DXXRALST -> Стало DXDRALE
-    "DXDLALE": "Lean_Mass_Arm_Left_g",  # Было DXXLALST -> Стало DXDLALE
-    "DXDRLLE": "Lean_Mass_Leg_Right_g",  # Было DXXRLLST -> Стало DXDRLLE
-    "DXDLLLE": "Lean_Mass_Leg_Left_g",  # Было DXXLLLST -> Стало DXDLLLE
     # --- Cardiovascular ---
     "BPXSY1": "BP_Systolic",  # Systolic blood pressure (mmHg)
     "BPXDI1": "BP_Diastolic",  # Diastolic blood pressure (mmHg)
@@ -119,51 +114,116 @@ RENAME_MAP = {
     # --- Kidney & Vitamins ---
     "URDACT": "Albumin_Creatinine_Ratio",  # Albumin/creatinine ratio (renal health)
     "LBXVIDMS": "VitaminD_nmolL",  # Vitamin D (nmol/L)
-    # ... (остальные переменные остаются как были)
 }
 
 # ==============================================================================
 # 4. ENCODING MAPPING (Categories -> Numbers)
 # ==============================================================================
-# This is crucial for Correlation Matrix.
-# We convert "1=Yes, 2=No" into "1=Yes, 0=No" to make math work.
-
 ENCODING_LOGIC = {
     "Gender": {1: 0, 2: 1},  # 0=Male, 1=Female
     "Vigorous_Activity": {1: 1, 2: 0},  # 1=Active, 0=Not Active
-    # Smoking: 1=Every day, 2=Some days -> 1 (Smoker). 3=Not at all -> 0 (Non-smoker)
+    # Smoking logic applies during processing
 }
 
-# List of columns that are strictly numerical (for outlier cleaning)
+# ==============================================================================
+# 5. FEATURE GROUPS (Domain-based)
+# ==============================================================================
+# Organized for Analysis.
+# Keep Height/Weight here to test their correlation vs BMI.
+
+FEATURE_GROUPS = {
+    "Target": ["PHQ9_Score"],
+    "Demographics": [
+        "Age",
+        "Gender",
+        "Race",
+        "Education_Level",
+        "Marital_Status",
+        "Poverty_Ratio",
+    ],
+    "Lifestyle": [
+        "Trouble_Sleeping_Doc",
+        "100_Cigs_Lifetime",
+        "Alcohol_Tried",
+        "Vigorous_Activity",
+        "General_Health_Cond",
+    ],
+    "Anthropometry_Basic": [
+        "BMI",
+        "Height_cm",  # Kept for comparison
+        "Weight_kg",  # Kept for comparison
+        "Waist_cm",
+    ],
+    "Body_Composition_DXA": ["Body_Fat_Pct", "Trunk_Fat_g", "Lean_Mass_g"],
+    "Cardio_Metabolic": [
+        "BP_Systolic",
+        "BP_Diastolic",
+        "Glucose_mgdL",
+        "Cholesterol_Total_mgdL",
+        "Triglycerides_mgdL",
+        "UricAcid_mgdL",
+    ],
+    "Biomarkers_Internal": [
+        "CRP_mgL",
+        "WBC_1000cells",
+        "VitaminD_nmolL",
+        "Creatinine_mgdL",
+        "Albumin_Creatinine_Ratio",
+        "Hemoglobin_g_dL",
+        "Iron_ugdL",
+        "Transferrin_Sat_Pct",
+    ],
+    "Toxins": ["Lead_ugdL", "Cadmium_ugL", "Mercury_Total_ugL"],
+}
+
+# List of strictly numerical columns (for imputation logic)
 NUMERICAL_COLS = [
     "Age",
     "Poverty_Ratio",
-    "Household_Size",
-    "Sleep_Hours",
-    "Alcohol_Drinks_Day",
-    "Sedentary_Time_Min",
+    "MEC_Weight",
     "BMI",
+    "Height_cm",
     "Weight_kg",
     "Waist_cm",
+    "Body_Fat_Pct",
+    "Lean_Mass_g",
+    "Trunk_Fat_g",
     "BP_Systolic",
     "BP_Diastolic",
-    "Glucose_mgdL",
-    "HbA1c_Pct",
     "Cholesterol_Total_mgdL",
-    "HDL_Cholesterol",
+    "Glucose_mgdL",
     "UricAcid_mgdL",
     "Triglycerides_mgdL",
     "Iron_ugdL",
-    "Ferritin_ngmL",
     "Creatinine_mgdL",
+    "Transferrin_Sat_Pct",
     "CRP_mgL",
     "WBC_1000cells",
     "Hemoglobin_g_dL",
-    "Platelets_1000cells",
     "Cadmium_ugL",
     "Lead_ugdL",
     "Mercury_Total_ugL",
     "Albumin_Creatinine_Ratio",
     "VitaminD_nmolL",
-    "LBXSATSI",
+    "PHQ9_Score",
 ]
+
+
+categorical_missing_codes = {
+    # --- Demographics ---
+    "Education_Level": [7, 9],  # Scale 1-5
+    "Marital_Status": [77, 99],  # Note: Double-digit codes here
+    # --- Lifestyle & History ---
+    "General_Health_Cond": [7, 9],  # Scale 1-5
+    "Vigorous_Activity": [7, 9],  # 1=Yes, 2=No
+    "100_Cigs_Lifetime": [7, 9],  # 1=Yes, 2=No
+    "Alcohol_Tried": [7, 9],  # 1=Yes, 2=No
+    "Trouble_Sleeping_Doc": [7, 9],  # 1=Yes, 2=No
+}
+
+# --- Append Depression Screener Questions (DPQ) ---
+# These are 0-3 scales. Codes 7 and 9 must be removed to prevent
+# calculating an artificially high depression score.
+for i in range(1, 10):
+    col_name = f"DPQ0{i}0"  # Generates DPQ010, DPQ020...
+    categorical_missing_codes[col_name] = [7, 9]
