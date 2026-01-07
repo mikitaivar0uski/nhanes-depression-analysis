@@ -5,8 +5,6 @@ from pathlib import Path
 # ==============================================================================
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT_DIR / "data" / "raw"
-OUTPUT_DIR = ROOT_DIR / "data" / "processed"
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # ==============================================================================
 # 2. FILE MAPPING (NHANES 2017-2018)

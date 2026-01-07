@@ -9,7 +9,7 @@ from src import config
 
 def _filter_population(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Internal helper: Restricts dataset to the target population (Adults 18+).
+    Restricts dataset to the target population (Adults 18+).
     """
     initial_rows = len(df)
     # Using readable name 'Age'
