@@ -1,19 +1,41 @@
 # NHANES Data Analysis Pipeline
 ### Statistical Analysis of Depression Risk Factors (2005-2018)
 
-![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
-![Libraries](https://img.shields.io/badge/Library-Pandas%20%7C%20Scikit--Learn-orange)
-![Data](https://img.shields.io/badge/Data-NHANES-green)
+![Python](https://img.shields.io/badge/Python-3.9%2B-blue?style=for-the-badge&logo=python&logoColor=white)
+![Pandas](https://img.shields.io/badge/Pandas-Data%20Analysis-150458?style=for-the-badge&logo=pandas&logoColor=white)
+![Scikit-Learn](https://img.shields.io/badge/scikit--learn-Machine%20Learning-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white)
+![Data](https://img.shields.io/badge/Data-NHANES-green?style=for-the-badge)
 
 ## 📋 Project Overview
 
-This project conducts a comprehensive analysis of depression risk factors using data from the **National Health and Nutrition Examination Survey (NHANES)**. The goal was not merely to predict depression, but to identify and rank the statistical associations between physiological biomarkers, lifestyle habits, and mental health status (measured via **PHQ-9**).
+This project conducts a comprehensive analysis of depression risk factors using data from the **National Health and Nutrition Examination Survey (NHANES)**. The goal was not merely to predict depression, but to identify, rank, and interpret the statistical associations between physiological biomarkers, lifestyle habits, and mental health status.
 
 Using a **Random Forest** algorithm as a feature selection tool, we uncovered that objective biological markers often carry as much signal as traditional socio-economic indicators.
 
 ---
 
-## 📊 Part I: Social & Demographic Determinants
+## 📉 Part 1: The Baseline - Depression Prevalence
+
+Before analyzing specific risk factors, it is critical to understand the distribution of the target variable within the population. We used the **PHQ-9 (Patient Health Questionnaire)** screening tool to define mental health status.
+
+* **Target Variable:** PHQ-9 Score (Range: 0-27)
+* **Clinical Threshold:** A score of **$\ge$ 10** indicates clinically significant depression.
+
+### The "Iceberg" of Mental Health
+While the dataset is heavily imbalanced towards healthy individuals, the severity breakdown reveals the scale of the clinical group.
+
+![Depression Prevalence](plots/depression.png)
+
+**Breakdown of the Clinical Population (Score $\ge$ 10):**
+The analysis focuses on distinguishing the distinct "tail" of the distribution. Out of the processed population, **461 participants (9.1%)** met the criteria for clinical depression. This group is composed of:
+* 🟡 **Moderate (10-14):** 292 participants
+* 🟠 **Moderately Severe (15-19):** 126 participants
+* 🔴 **Severe (20-27):** 43 participants (Critical urgency)
+
+
+---
+
+## 📊 Part 2: Social & Demographic Determinants
 
 The analysis confirms that mental health is deeply rooted in the social context. We observed distinct patterns across gender and racial groups.
 
@@ -29,7 +51,7 @@ Our analysis revealed significant disparities across demographic groups. Notably
 
 ---
 
-## 🧬 Part II: Biological & Lifestyle Insights
+## 🧬 Part 3: Biological & Lifestyle Insights
 
 Moving beyond demographics, the model identified powerful associations with lifestyle choices and metabolic health.
 
