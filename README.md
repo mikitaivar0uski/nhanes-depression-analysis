@@ -1,104 +1,60 @@
-# NHANES Data Analysis Pipeline: Determinants of Depression Risk
-### Multi-modal Statistical Analysis & Machine Learning (2005-2018)
+# Depression Risk Screening: A Hybrid Analytical Approach
 
-![Python](https://img.shields.io/badge/Python-3.9%2B-blue?style=for-the-badge&logo=python&logoColor=white)
-![Pandas](https://img.shields.io/badge/Pandas-Data%20Analysis-150458?style=for-the-badge&logo=pandas&logoColor=white)
-![Scikit-Learn](https://img.shields.io/badge/scikit--learn-Machine%20Learning-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white)
-![Data](https://img.shields.io/badge/Data-NHANES-green?style=for-the-badge)
+## Executive Summary
+This project addresses the critical challenge of under-diagnosed depression in the general population. By analyzing 20,000+ records from the National Health and Nutrition Examination Survey (NHANES), we developed a high-sensitivity screening protocol capable of identifying at-risk individuals who might otherwise be overlooked in primary care.
 
-## 📋 Project Overview
-
-This project conducts a comprehensive analysis of depression risk factors using data from the **National Health and Nutrition Examination Survey (NHANES)**. The objective was to identify and interpret statistical associations between physiological biomarkers, socioeconomic status, and mental health.
-
-**Important Note:** Findings in this study represent **statistical correlations and associations**, not direct causal relationships.
-
----
-
-## 📉 Part 1: Clinical Baseline
-
-We defined mental health status using the **PHQ-9 (Patient Health Questionnaire)**.
-* **Target:** PHQ-9 Score $\ge$ 10 (Clinically significant depression).
-* **Prevalence:** 9.1% of the study population met the clinical criteria.
+**Our Philosophy:** Data tells a story, but only if you listen with the right tools.
+> "I used a hybrid analytical approach: Machine Learning to identify critical signals among 50+ variables, followed by traditional statistical visualization to uncover the 'human story' behind the data."
 
 ![Depression Prevalence](plots/depression.png)
+*Figure 1: Distribution of depression risk in the study cohort based on PHQ-9 scores.*
 
 ---
 
-## 📊 Part 2: Socioeconomic & Demographic Determinants
+## 1. Machine Learning: Signal Detection
+To navigate the complexity of 50+ physiological and socioeconomic variables, we employed an ensemble of Machine Learning algorithms, including Random Forest and XGBoost. This was not about "black box" prediction, but about **feature discovery**.
 
-Mental health shows a deep statistical link with social context. Our analysis revealed two dominant trends in risk distribution:
+Using Random Forest feature importance analysis, we isolated the primary drivers of depression risk from the noise.
 
-### 1. Financial Stability (The Social Gradient)
-A clear linear association exists between household income and depression prevalence.
-* **Lowest Income (Q1):** 13.5% prevalence.
-* **Highest Income (Q4):** 4.5% prevalence.
-
-![Social Gradient](plots/wealth_Depression_Gradient.png)
-
-### 2. Education Level
-Higher educational attainment shows a strong protective association, often functioning in synergy with higher income levels.
-* **College Graduates:** Demonstrate the lowest prevalence (**4.4%**).
-* **Observation:** Education serves as a proxy for both cognitive resilience and economic security.
-
-![Education Level](plots/education_Level.png)
-
-### 3. Marital Status: Two Distinct Risk Trends
-Updated analysis of marital status reveals a clear stratification of the population into two risk groups:
-
-* **The High-Risk Group (Post-Relationship Stress):** Individuals who are **Divorced (14.3%)**, **Widowed (13.9%)**, or **Separated (13.8%)** show the highest prevalence. This suggests a strong correlation between relationship dissolution/loss and mental health vulnerability.
-* **The Lower-Risk Group (Stable or Single):** Individuals who are **Married (6.1%)**, **Living with Partner (9.3%)**, or **Never Married (9.9%)** exhibit significantly lower rates.
-
-**Key Insight:** Official **Marriage (6.1%)** is uniquely associated with the lowest risk in the entire dataset. Even when compared to "Living with Partner," marriage shows a distinct statistical advantage, suggesting that the formal marital bond correlates with unique protective social or psychological factors.
-
-![Marital Status Impact](plots/marital_Status_Impact.png)
-
-### 4. Race & Ethnicity
-Granular analysis shows **Non-Hispanic Asian** populations have the lowest associated risk (**3.8%**), while the **Other/Multi-Racial** group shows the highest prevalence (**14.8%**).
-
-![Race Analysis](plots/race_Ethnicity.png)
-
-### 5. The Gender Gap
-Consistent with epidemiological trends, females in the NHANES dataset show a higher prevalence of depression symptoms compared to males.
-
-![Gender Analysis](plots/gender_Analysis.png)
+![Feature Importance](plots/feature_importance.png)
+*Figure 2: Top predictive features identified by the Random Forest model. Note the dominance of General Health, Sleep, and Socioeconomic factors.*
 
 ---
 
-## 🧬 Part 3: Biological Insights & Lifestyle
+## 2. Statistical Analysis: The Human Story
+Once the key signals were identified by the algorithms, we switched to targeted statistical analysis to understand the *nature* of these relationships.
 
-### 6. Metabolic Defense: Uric Acid
-A key finding is the inverse correlation between **Uric Acid** and depression.
-* **Hypothesis:** Uric Acid is a major **endogenous antioxidant**. Higher levels are statistically associated with **lower depression rates**, likely due to its role in neutralizing oxidative stress and acting as a neuroprotective agent.
+### The Socioeconomic Gradient
+Wealth is often cited as a buffer against mental health struggles. Our data quantifies this protective effect, showing a stark, linear gradient: as the Poverty Income Ratio increases, depression prevalence plummets.
 
-![Uric Acid Analysis](plots/uric_Acid.png)
+![Wealth Gradient](plots/wealth_Depression_Gradient.png)
+*Figure 3: The inverse relationship between household wealth (Poverty Income Ratio) and depression prevalence.*
 
-### 7. Lifestyle Factors (Smoking & Alcohol)
-Lifestyle choices show a significant statistical relationship with mental health. Individuals with a history of smoking exhibit higher depression rates, validating the cumulative risk of systemic stressors.
+### The Role of Sleep
+Sleep quality emerged as a top-tier predictor in our ML models. The statistical breakdown confirms a massive disparity: individuals with doctor-confirmed sleep trouble have a drastically higher prevalence of depression compared to good sleepers.
 
-![Lifestyle Analysis](plots/lifestyle_Dumbbell.png)
+![Sleep Analysis](plots/Sleep_Trouble.png)
+*Figure 4: Prevalence of depression among individuals with and without reported sleep disorders.*
 
-### 8. The "Mercury Paradox" (Confounder Analysis)
-Initially, Mercury appeared "protective." However, deep-dive analysis confirmed it as a **Socioeconomic Confounder**. Higher Mercury levels are a proxy for frequent seafood consumption, which correlates with high-income quartiles (Q4) rather than being a biological driver.
+### Social Structure: Marriage
+Social support systems play a pivotal role in mental resilience. Our analysis suggests that the stability often associated with marriage correlates with the lowest risk profile, whereas separated and widowed individuals face significantly higher risks.
+
+![Marital Status](plots/marital_Status_Impact.png)
+*Figure 5: Depression rates across different marital statuses.*
+
+---
+
+## 3. The "Curious Case": Mercury
+In our broad exploratory analysis, we uncovered a counter-intuitive correlation: higher blood mercury levels were associated with *lower* depression rates. 
+
+While initially puzzling, this is likely a **confounding variable** representing diet and wealth. High mercury levels are often linked to high consumption of expensive seafood (e.g., tuna, swordfish), which is a diet characteristic of higher socio-economic status. Thus, mercury acts as a proxy for wealth, which we already established is protective.
 
 ![Mercury Analysis](plots/mercury_Analysis.png)
+*Figure 6: The unexpected inverse correlation between blood mercury levels and depression, likely mediated by socioeconomic status.*
 
 ---
 
-## ⚙️ Methodology & Technical Rigor
+## Conclusion
+Depression is a complex, multifaceted disease with no single cause. Through this project, we have successfully identified several significant correlations—ranging from sleep hygiene to economic stability—that can aid in early screening.
 
-### 1. Target Leakage Prevention
-To ensure the integrity of the feature importance ranking, all sleep-related variables were removed. Since sleep disturbance is a diagnostic component of the PHQ-9, its inclusion would artificially inflate model metrics without providing actionable insights.
-
-### 2. Analytical Approach
-We utilized an **unweighted analysis** to prioritize the identification of stable statistical signals. All findings highlight **correlations**, providing a foundation for further causal longitudinal studies.
-
----
-
-## 📉 Conclusion
-
-The strongest associations with mental health stability are found at the intersection of:
-1. **Physiological Factors:** Antioxidant capacity (Uric Acid).
-2. **Social Stability:** The unique protective correlation of **Marriage**.
-3. **Socioeconomic Status:** The symbiotic relationship between **Income and Education**.
-
-**Key Takeaway:** By accounting for confounders like Mercury and identifying protective markers like Uric Acid, this pipeline provides a sophisticated, multi-modal view of depression risk factors.
+**Crucial Note:** It is vital to interpret these findings with scientific rigor. While we have established strong predictive correlations, **correlation is not causation**. These markers serve as flags for risk, not necessarily as root causes, but they provide invaluable guidance for targeted intervention and further clinical study.

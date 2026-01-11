@@ -7,14 +7,18 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT_DIR / "data" / "raw"
 
 # ==============================================================================
-# 2. FILE MAPPING (NHANES 2017-2018)
+# 2. FILE MAPPING (NHANES 2011-2018)
 # ==============================================================================
+# Suffixes: 2011-12 (_G), 2013-14 (_H), 2015-16 (_I), 2017-18 (_J)
+CYCLES = ["_G", "_H", "_I", "_J"]
+
 NHANES_MAP = {
     # --- Demographics ---
-    "DEMO_J": [
+    "DEMO": [
         "SEQN",
         "RIAGENDR",
         "RIDAGEYR",
+        "RIDEXPRG",  
         "INDFMPIR",
         "DMDEDUC2",
         "DMDMARTL",
@@ -24,21 +28,21 @@ NHANES_MAP = {
         "RIDRETH3",
     ],
     # --- Questionnaire ---
-    "DPQ_J": ["SEQN"]
+    "DPQ": ["SEQN"]
     + [f"DPQ0{i}0" for i in range(1, 10)],  # Generates DPQ010...DPQ090
-    "HSQ_J": ["SEQN", "HSD010"],
-    "SMQ_J": ["SEQN", "SMQ020"],
-    "ALQ_J": ["SEQN", "ALQ111"],
-    "PAQ_J": ["SEQN", "PAQ650"],
-    "SLQ_J": ["SEQN", "SLQ050"],
+    "HSQ": ["SEQN", "HSD010"],
+    "SMQ": ["SEQN", "SMQ020"],
+    "ALQ": ["SEQN", "ALQ111"],
+    "PAQ": ["SEQN", "PAQ650"],
+    "SLQ": ["SEQN", "SLQ050"],
     # --- Exams & Lab ---
-    "BMX_J": [
+    "BMX": [
         "SEQN",
         "BMXBMI",
         "BMXWAIST",
     ],  # Added BMXWT (Weight)
-    "BPX_J": ["SEQN", "BPXSY1", "BPXDI1"],
-    "BIOPRO_J": [
+    "BPX": ["SEQN", "BPXSY1", "BPXDI1"],
+    "BIOPRO": [
         "SEQN",
         "LBXSGL",
         "LBXSCH",
@@ -48,13 +52,67 @@ NHANES_MAP = {
         "LBXSCR",
         "LBXSATSI",
     ],
-    "CBC_J": ["SEQN", "LBXWBCSI", "LBXHGB"],
-    "HSCRP_J": ["SEQN", "LBXHSCRP"],
-    "PBCD_J": ["SEQN", "LBXBCD", "LBXBPB", "LBXTHG"],
-    "ALB_CR_J": ["SEQN", "URDACT"],
-    "VID_J": ["SEQN", "LBXVIDMS"],
+    "CBC": ["SEQN", "LBXWBCSI", "LBXHGB"],
+    "HSCRP": ["SEQN", "LBXHSCRP"],
+    "PBCD": ["SEQN", "LBXBCD", "LBXBPB", "LBXTHG"],
+    "ALB_CR": ["SEQN", "URDACT"],
+    "VID": ["SEQN", "LBXVIDMS"],
+    # --- Dietary Data (Day 1) ---
+    "DR1TOT": [
+        "SEQN",
+        "DR1TKCAL",  # Energy
+        "DR1TPROT",  # Protein
+        "DR1TCARB",  # Carbohydrates
+        "DR1TSFAT",  # Total Saturated Fatty Acids
+        "DR1TMFAT",  # Total Monounsaturated Fatty Acids
+        "DR1TPFAT",  # Total Polyunsaturated Fatty Acids
+        "DR1TCHOL",  # Cholesterol
+        "DR1TFIBE",  # Dietary Fiber
+        "DR1TVARA",  # Vitamin A (RAE)
+        "DR1TVB1",   # Thiamin (B1)
+        "DR1TVB2",   # Riboflavin (B2)
+        "DR1TNIAC",  # Niacin
+        "DR1TVB6",   # Vitamin B6
+        "DR1TFOLA",  # Total Folate
+        "DR1TVB12",  # Vitamin B12
+        "DR1TVC",    # Vitamin C
+        "DR1TVE",    # Vitamin E
+        "DR1TMAGN",  # Magnesium
+        "DR1TIRON",  # Iron
+        "DR1TZINC",  # Zinc
+        "DR1TSELE",  # Selenium
+        "DR1TCAFF",  # Caffeine
+        "DR1TALCO",  # Alcohol
+    ],
+    # --- Dietary Data (Day 2) ---
+    "DR2TOT": [
+        "SEQN",
+        "DR2TKCAL",
+        "DR2TPROT",
+        "DR2TCARB",
+        "DR2TSFAT",
+        "DR2TMFAT",
+        "DR2TPFAT",
+        "DR2TCHOL",
+        "DR2TFIBE",
+        "DR2TVARA",
+        "DR2TVB1",
+        "DR2TVB2",
+        "DR2TNIAC",
+        "DR2TVB6",
+        "DR2TFOLA",
+        "DR2TVB12",
+        "DR2TVC",
+        "DR2TVE",
+        "DR2TMAGN",
+        "DR2TIRON",
+        "DR2TZINC",
+        "DR2TSELE",
+        "DR2TCAFF",
+        "DR2TALCO",
+    ],
     # --- DXA Body Composition (Simplified) ---
-    "DXX_J": [
+    "DXX": [
         "SEQN",
         "DXXTRFAT",  # Trunk Fat (grams)
         "DXDTOPF",  # Body Fat Percentage
@@ -70,6 +128,7 @@ RENAME_MAP = {
     # --- Demographics ---
     "RIAGENDR": "Gender",  # Gender
     "RIDAGEYR": "Age",  # Age
+    "RIDEXPRG": "Pregnancy", # Pregnancy
     "RIDRETH3": "Race",
     "INDFMPIR": "Poverty_Ratio",  # Ratio of family income to poverty threshold
     "DMDEDUC2": "Education_Level",  # Education level (adults 20+)
@@ -101,6 +160,7 @@ RENAME_MAP = {
     "LBXSIR": "Iron_ugdL",  # Refrigerated serum iron (ug/dL)
     "LBXSCR": "Creatinine_mgdL",  # Creatinine (kidney function marker) (mg/dL)
     "LBXSATSI": "Transferrin_Sat_Pct",  # Transferrin saturation percentage
+    "LBXCOT": "Cotinine_ngmL", # Serum Cotinine (if available in BIOPRO or special lab)
     # --- Inflammation & Immunity ---
     "LBXHSCRP": "CRP_mgL",  # C-reactive protein (inflammation marker) (mg/L)
     "LBXWBCSI": "WBC_1000cells",  # White blood cell count (1000 cells/uL)
@@ -112,6 +172,54 @@ RENAME_MAP = {
     # --- Kidney & Vitamins ---
     "URDACT": "Albumin_Creatinine_Ratio",  # Albumin/creatinine ratio (renal health)
     "LBXVIDMS": "VitaminD_nmolL",  # Vitamin D (nmol/L)
+    # --- Dietary (Day 1) ---
+    "DR1TKCAL": "Energy_kcal_D1",
+    "DR1TPROT": "Protein_g_D1",
+    "DR1TCARB": "Carbs_g_D1",
+    "DR1TSFAT": "SaturatedFat_g_D1",
+    "DR1TMFAT": "MonounsatFat_g_D1",
+    "DR1TPFAT": "PolyunsatFat_g_D1",
+    "DR1TCHOL": "DietaryChol_mg_D1",
+    "DR1TFIBE": "Fiber_g_D1",
+    "DR1TVARA": "VitaminA_ug_D1",
+    "DR1TVB1": "VitaminB1_mg_D1",
+    "DR1TVB2": "VitaminB2_mg_D1",
+    "DR1TNIAC": "Niacin_mg_D1",
+    "DR1TVB6": "VitaminB6_mg_D1",
+    "DR1TFOLA": "Folate_ug_D1",
+    "DR1TVB12": "VitaminB12_ug_D1",
+    "DR1TVC": "VitaminC_mg_D1",
+    "DR1TVE": "VitaminE_mg_D1",
+    "DR1TMAGN": "Magnesium_mg_D1",
+    "DR1TIRON": "Iron_mg_D1",
+    "DR1TZINC": "Zinc_mg_D1",
+    "DR1TSELE": "Selenium_ug_D1",
+    "DR1TCAFF": "Caffeine_mg_D1",
+    "DR1TALCO": "Alcohol_g_D1",
+    # --- Dietary (Day 2) ---
+    "DR2TKCAL": "Energy_kcal_D2",
+    "DR2TPROT": "Protein_g_D2",
+    "DR2TCARB": "Carbs_g_D2",
+    "DR2TSFAT": "SaturatedFat_g_D2",
+    "DR2TMFAT": "MonounsatFat_g_D2",
+    "DR2TPFAT": "PolyunsatFat_g_D2",
+    "DR2TCHOL": "DietaryChol_mg_D2",
+    "DR2TFIBE": "Fiber_g_D2",
+    "DR2TVARA": "VitaminA_ug_D2",
+    "DR2TVB1": "VitaminB1_mg_D2",
+    "DR2TVB2": "VitaminB2_mg_D2",
+    "DR2TNIAC": "Niacin_mg_D2",
+    "DR2TVB6": "VitaminB6_mg_D2",
+    "DR2TFOLA": "Folate_ug_D2",
+    "DR2TVB12": "VitaminB12_ug_D2",
+    "DR2TVC": "VitaminC_mg_D2",
+    "DR2TVE": "VitaminE_mg_D2",
+    "DR2TMAGN": "Magnesium_mg_D2",
+    "DR2TIRON": "Iron_mg_D2",
+    "DR2TZINC": "Zinc_mg_D2",
+    "DR2TSELE": "Selenium_ug_D2",
+    "DR2TCAFF": "Caffeine_mg_D2",
+    "DR2TALCO": "Alcohol_g_D2",
 }
 
 # ==============================================================================
@@ -203,6 +311,29 @@ NUMERICAL_COLS = [
     "Mercury_Total_ugL",
     "Albumin_Creatinine_Ratio",
     "VitaminD_nmolL",
+    "Energy_kcal",
+    "Protein_g",
+    "Carbs_g",
+    "SaturatedFat_g",
+    "MonounsatFat_g",
+    "PolyunsatFat_g",
+    "DietaryChol_mg",
+    "Fiber_g",
+    "VitaminA_ug",
+    "VitaminB1_mg",
+    "VitaminB2_mg",
+    "Niacin_mg",
+    "VitaminB6_mg",
+    "Folate_ug",
+    "VitaminB12_ug",
+    "VitaminC_mg",
+    "VitaminE_mg",
+    "Magnesium_mg",
+    "Iron_mg",
+    "Zinc_mg",
+    "Selenium_ug",
+    "Caffeine_mg",
+    "Alcohol_g",
     "PHQ9_Score",
 ]
 
