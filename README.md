@@ -14,7 +14,7 @@ The PHQ-9 is a standard instrument for screening depression. It consists of 9 qu
 
 To determine which of the hundreds of available metrics matter most, we trained a **Random Forest** classifier. This algorithm helps us rank features by their predictive power.
 
-![Feature Importance](plots/feature_importance.png)
+![Feature Importance](plots/feature_Importance.png)
 
 Based on this model, we identified the top 15 most important factors. Interestingly, the data points clearly towards a "Big Three" of socio-demographic drivers, followed by biological markers.
 
@@ -95,4 +95,5 @@ Our analysis leads to a few key takeaways:
 2.  **Biological Complexity**: Biological markers like inflammation and toxins (Cadmium) play a role, but their signal is often weaker than the "Big Three."
 3.  **Limitations**:
     *   **Associations, not Causation**: All findings here are correlations.
+
     *   **Population Weights**: For the sake of clear and interpretable visualization, we did not apply NHANES population weights. While this makes the graphs easier to read, it means these results are strictly for the *sample* and may not perfectly reflect the US population census.
