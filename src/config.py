@@ -83,6 +83,10 @@ NHANES_MAP = {
         "DR1TSELE",  # Selenium
         "DR1TCAFF",  # Caffeine
         "DR1TALCO",  # Alcohol
+        "DR1TBCAR",  # Beta-carotene
+        "DR1TTFAT",  # Total Fat
+        "DR1TFA",    # Folic Acid
+        "DR1TVD",    # Vitamin D (Dietary)
     ],
     # --- Dietary Data (Day 2) ---
     "DR2TOT": [
@@ -110,6 +114,10 @@ NHANES_MAP = {
         "DR2TSELE",
         "DR2TCAFF",
         "DR2TALCO",
+        "DR2TBCAR",
+        "DR2TTFAT",
+        "DR2TFA",
+        "DR2TVD",
     ],
     # --- DXA Body Composition (Simplified) ---
     "DXX": [
@@ -220,6 +228,15 @@ RENAME_MAP = {
     "DR2TSELE": "Selenium_ug_D2",
     "DR2TCAFF": "Caffeine_mg_D2",
     "DR2TALCO": "Alcohol_g_D2",
+    # --- Additional DII Components ---
+    "DR1TBCAR": "BetaCarotene_ug_D1",
+    "DR2TBCAR": "BetaCarotene_ug_D2",
+    "DR1TTFAT": "TotalFat_g_D1",
+    "DR2TTFAT": "TotalFat_g_D2",
+    "DR1TFA": "FolicAcid_ug_D1",
+    "DR2TFA": "FolicAcid_ug_D2",
+    "DR1TVD": "VitaminD_ug_D1",
+    "DR2TVD": "VitaminD_ug_D2",
 }
 
 # ==============================================================================
@@ -334,6 +351,10 @@ NUMERICAL_COLS = [
     "Selenium_ug",
     "Caffeine_mg",
     "Alcohol_g",
+    "BetaCarotene_ug",
+    "TotalFat_g",
+    "FolicAcid_ug",
+    "VitaminD_ug",
     "PHQ9_Score",
 ]
 

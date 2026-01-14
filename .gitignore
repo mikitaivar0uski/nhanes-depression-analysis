@@ -1,4 +1,7 @@
 __pycache__/
+cat_boost_info/
 temp/
 *.py[cod]
 *.pkl
+
+
